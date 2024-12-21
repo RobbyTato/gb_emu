@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include <getopt.h>
+#include <rom.h>
 
-void usage() {
+void usage(void) {
     printf("Usage: gbemu [OPTIONS]\n");
     printf("Options:\n");
     printf("  -r PATH    ROM path\n");
@@ -15,17 +17,17 @@ void usage() {
 
 int main(int argc, char *argv[])
 {
-    char *rom_name = NULL;
-    bool run_boot = false;
+    char *rom_path = NULL;
+    // bool run_boot = false;
     int opt;
 
     while ((opt = getopt(argc, argv, "r:bh")) != -1) {
         switch (opt) {
             case 'r':
-                rom_name = optarg;
+                rom_path = optarg;
                 break;
             case 'b':
-                run_boot = true;
+                // run_boot = true;
                 break;
             case 'h':
                 usage();
@@ -37,13 +39,13 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (rom_name == NULL) {
+    if (rom_path == NULL) {
         fprintf(stderr, "ROM path is required\n");
         usage();
         return 1;
     }
 
-    
+    load_rom(rom_path);
 
     return 0;
 }
