@@ -7,9 +7,9 @@
                 "${workspaceFolder}/build/json-c"
             ],
             "defines": [],
-            "compilerPath": "/usr/bin/clang",
-            "cStandard": "c17",
-            "intelliSenseMode": "linux-clang-x64"
+            "compilerPath": null,
+            "cStandard": "c99",
+            "intelliSenseMode": "linux-gcc-x64"
         }
     ],
     "version": 4

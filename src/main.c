@@ -1,7 +1,49 @@
 #include <stdio.h>
-#include "json.h"
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <stdbool.h>
+#include <getopt.h>
 
-int main() {
-    printf("Hello world!\n");
+void usage() {
+    printf("Usage: gbemu [OPTIONS]\n");
+    printf("Options:\n");
+    printf("  -r PATH    ROM path\n");
+    printf("  -b         Run boot rom\n");
+    printf("  -h         Display this help message\n");
+}
+
+int main(int argc, char *argv[])
+{
+    char *rom_name = NULL;
+    bool run_boot = false;
+    int opt;
+
+    while ((opt = getopt(argc, argv, "r:bh")) != -1) {
+        switch (opt) {
+            case 'r':
+                rom_name = optarg;
+                break;
+            case 'b':
+                run_boot = true;
+                break;
+            case 'h':
+                usage();
+                return 0;
+            case '?':
+                fprintf(stderr, "Unknown option: %c\n", optopt);
+                usage();
+                return 1;
+        }
+    }
+
+    if (rom_name == NULL) {
+        fprintf(stderr, "ROM path is required\n");
+        usage();
+        return 1;
+    }
+
+    
+
     return 0;
 }
