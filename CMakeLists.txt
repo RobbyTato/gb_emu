@@ -35,6 +35,7 @@ enable_c_compiler_flag_if_supported("-Wwrite-strings")
 enable_c_compiler_flag_if_supported("-Wno-unused-function")
 enable_c_compiler_flag_if_supported("-Wno-unused-parameter")
 enable_c_compiler_flag_if_supported("-Waggregate-return")
+enable_c_compiler_flag_if_supported("-Wimplicit-fallthrough")
 
 enable_c_compiler_flag_if_supported("-O3")
 

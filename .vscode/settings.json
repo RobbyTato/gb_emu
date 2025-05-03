@@ -1,6 +1,8 @@
 {
     "C_Cpp.default.compilerPath": "/usr/bin/gcc",
     "files.associations": {
-        "stdbool.h": "c"
+        "stdbool.h": "c",
+        "stddef.h": "c",
+        "random": "c"
     }
 }

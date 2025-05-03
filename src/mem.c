@@ -1,21 +1,10 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <rom.h>
+#include <mem.h>
 
-#define TILE_SIZE 16
-#define MAP_SIZE 1024
-#define OBJ_SIZE 4
-
-typedef uint8_t tile[TILE_SIZE];
-typedef uint8_t map[MAP_SIZE];
-typedef uint8_t obj[OBJ_SIZE];
-
-#define VRAM_TILES_NUM 384
-#define VRAM_MAP_NUM 2
-#define OBJ_NUM 40
-#define WRAM_SIZE 0x2000
-#define HRAM_SIZE 0x7F
-
+// Memory
 tile vram_tiles[VRAM_TILES_NUM];
 map vram_maps[VRAM_MAP_NUM];
 obj oam[OBJ_NUM];
@@ -89,23 +78,9 @@ uint8_t r_boot_rom_mapped = 0; // TODO: set to 1 if not running boot ram
 
 // TODO: can index map as a bitfield, check 2. Memory Map
 
-/* Memory Ranges */
-// A -> address
-#define ROM_A 0x0000
-#define VRAM_TILES_A 0x8000
-#define VRAM_MAPS_A 0x9800
-#define EXT_RAM_A 0xA000
-#define WRAM_A 0xC000
-#define ECHO_RAM_A 0xE000
-#define OAM_A 0xFE00
-#define UNUSED_A 0xFEA0
-#define IO_A 0xFF00
-#define HRAM_A 0xFF80
-#define IE_REG_A 0xFFFF
-
-size_t bin_search(const uint16_t arr[], size_t size, const uint16_t target) {
-    size_t left = 0;
-    size_t right = size - 1;
+int bin_search(const uint16_t arr[], int size, const uint16_t target) {
+    int left = 0;
+    int right = size - 1;
     while (left <= right) {
         int mid = left + (right - left) / 2; // Avoid overflow
         if (arr[mid] == target) {
@@ -155,6 +130,10 @@ uint8_t read_mem(uint16_t addr) {
             return hram[addr - HRAM_A];
         case 10:
             return r_ie;
+        default:
+            fprintf(stderr, "Attempted read at addr %d\n", (int)addr);
+            fprintf(stderr, "Invalid switch case, exiting...\n");
+            exit(1);
     }
 
     // Handle I/O registers
@@ -233,8 +212,9 @@ void write_mem(uint16_t addr, uint8_t val) {
 
     switch (bin_search(mem_ranges, 11, addr)) {
         case 0:
-            rom[addr] = val;
-            return;
+            fprintf(stderr, "Attempted write at addr %d\n", (int)addr);
+            fprintf(stderr, "Cannot write to ROM, exiting...\n");
+            exit(1);
         case 1:
             ((uint8_t *)vram_tiles)[addr - VRAM_TILES_A] = val;
             return;
@@ -242,21 +222,21 @@ void write_mem(uint16_t addr, uint8_t val) {
             ((uint8_t *)vram_maps)[addr - VRAM_MAPS_A] = val;
             return;
         case 3:
-            fprintf(stderr, "Attempted read at addr %d\n", (int)addr);
+            fprintf(stderr, "Attempted write at addr %d\n", (int)addr);
             fprintf(stderr, "External RAM unimplemented, exiting...\n");
             exit(1);
         case 4:
             wram[addr - WRAM_A] = val;
             return;
         case 5:
-            fprintf(stderr, "Attempted read at addr %d\n", (int)addr);
+            fprintf(stderr, "Attempted write at addr %d\n", (int)addr);
             fprintf(stderr, "Echo RAM unimplemented, exiting...\n");
             exit(1);
         case 6:
             ((uint8_t *)oam)[addr - OAM_A] = val;
             return;
         case 7:
-            fprintf(stderr, "Attempted read at addr %d\n", (int)addr);
+            fprintf(stderr, "Attempted write at addr %d\n", (int)addr);
             fprintf(stderr, "Unused/Invalid RAM location, exiting...\n");
             exit(1);
         case 8:
@@ -267,6 +247,10 @@ void write_mem(uint16_t addr, uint8_t val) {
         case 10:
             r_ie = val;
             return;
+        default:
+            fprintf(stderr, "Attempted write at addr %d\n", (int)addr);
+            fprintf(stderr, "Invalid switch case, exiting...\n");
+            exit(1);
     }
 
     // Handle I/O registers
@@ -360,7 +344,7 @@ void write_mem(uint16_t addr, uint8_t val) {
         return;
     }
 
-    fprintf(stderr, "Attempted read at addr %d\n", (int)addr);
+    fprintf(stderr, "Attempted write at addr %d\n", (int)addr);
     fprintf(stderr, "Unused/Invalid RAM location, exiting...\n");
     exit(1);
 }
