@@ -335,7 +335,11 @@ void execute(void) {
                     LEAVE
                 );
                 write_r8(idx, res);
-                dots += 4;
+                if (idx == 6) {
+                    dots += 12;
+                } else {
+                    dots += 4;
+                }  
                 pc.r16++;
                 return;
             }
@@ -350,7 +354,11 @@ void execute(void) {
                     LEAVE
                 );
                 write_r8(idx, res);
-                dots += 4;
+                if (idx == 6) {
+                    dots += 12;
+                } else {
+                    dots += 4;
+                }  
                 pc.r16++;
                 return;
             }
@@ -511,7 +519,11 @@ void execute(void) {
                     (res < af.r8.h) || (res < r8)
                 );
                 af.r8.h = res;
-                dots += 4;
+                if (idx == 6) {
+                    dots += 8;
+                } else {
+                    dots += 4;
+                }
                 pc.r16++;
                 return;
             }
@@ -527,7 +539,11 @@ void execute(void) {
                     (res < af.r8.h) || (res < (r8 + c))
                 );
                 af.r8.h = res;
-                dots += 4;
+                if (idx == 6) {
+                    dots += 8;
+                } else {
+                    dots += 4;
+                }              
                 pc.r16++;
                 return;
             }
@@ -567,7 +583,11 @@ void execute(void) {
                 uint8_t r8 = read_r8(idx);
                 af.r8.h &= r8;
                 update_flags(af.r8.h == 0, SET_0, SET_1, SET_0);
-                dots += 4;
+                if (idx == 6) {
+                    dots += 8;
+                } else {
+                    dots += 4;
+                }  
                 pc.r16++;
                 return;
             }
@@ -599,7 +619,11 @@ void execute(void) {
                     ((res ^ af.r8.h ^ r8) & 0x10) != 0,
                     r8 > af.r8.h
                 );
-                dots += 4;
+                if (idx == 6) {
+                    dots += 8;
+                } else {
+                    dots += 4;
+                }  
                 pc.r16++;
                 return;
             }
@@ -976,7 +1000,11 @@ void execute(void) {
                 uint8_t bit_idx = (inst2 >> 3) & 0x7;
                 uint8_t r8 = read_r8(idx);
                 update_flags((r8 >> bit_idx) & 1 == 0, SET_0, SET_1, LEAVE);
-                dots += 8;
+                if (idx == 6) {
+                    dots += 12;
+                } else {
+                    dots += 8;
+                }  
                 pc.r16 += 2;
                 return;
             }
