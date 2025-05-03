@@ -875,7 +875,7 @@ void execute(void) {
             case 0xCB: { // prefix
             uint8_t inst2 = read_mem(pc.r16 + 1);
             switch (inst2 & 0xC0) {
-            case 0x0: {
+            case 0x00: {
                 switch (inst2 & 0x38) {
                     case 0x0: { // rlc r8
                         uint8_t idx = inst2 & 0x7;
@@ -888,8 +888,6 @@ void execute(void) {
                         pc.r16 += 2;
                         return;
                     }
-                    // TODO: Some of these are just copy pasted, not edited
-                    // TODO: Figure them out
                     case 0x8: { // rrc r8
                         uint8_t idx = inst2 & 0x7;
                         uint8_t r8 = read_r8(idx);
@@ -902,23 +900,107 @@ void execute(void) {
                         return;
                     }
                     case 0x10: { // rl r8
-                        uint8_t left_set = af.r8.h >> 7;
-                        af.r8.h = (af.r8.h << 1) | get_c_flag();
-                        update_flags(SET_0, SET_0, SET_0, left_set);
-                        dots += 4;
-                        pc.r16++;
+                        uint8_t idx = inst2 & 0x7;
+                        uint8_t r8 = read_r8(idx);
+                        uint8_t carry = get_c_flag();
+                        uint8_t left_set = r8 >> 7;
+                        uint8_t res = (r8 << 1) | carry;
+                        update_flags(res == 0, SET_0, SET_0, left_set);
+                        write_r8(idx, res);
+                        dots += 8;
+                        pc.r16 += 2;
                         return;
                     }
                     case 0x18: { // rr r8
-                        uint8_t right_set = af.r8.h & 1;
-                        af.r8.h = (af.r8.h >> 1) | (get_c_flag() << 7);
-                        update_flags(SET_0, SET_0, SET_0, right_set);
-                        dots += 4;
-                        pc.r16++;
+                        uint8_t idx = inst2 & 0x7;
+                        uint8_t r8 = read_r8(idx);
+                        uint8_t carry = get_c_flag();
+                        uint8_t right_set = r8 & 1;
+                        uint8_t res = (r8 >> 1) | (carry << 7);
+                        update_flags(res == 0, SET_0, SET_0, right_set);
+                        write_r8(idx, res);
+                        dots += 8;
+                        pc.r16 += 2;
+                        return;
+                    }
+                    case 0x20: { // sla r8
+                        uint8_t idx = inst2 & 0x7;
+                        uint8_t r8 = read_r8(idx);
+                        uint8_t left_set = r8 >> 7;
+                        uint8_t res = r8 << 1;
+                        update_flags(res == 0, SET_0, SET_0, left_set);
+                        write_r8(idx, res);
+                        dots += 8;
+                        pc.r16 += 2;
+                        return;
+                    }
+                    case 0x28: { // sra r8
+                        uint8_t idx = inst2 & 0x7;
+                        uint8_t r8 = read_r8(idx);
+                        uint8_t right_set = r8 & 1;
+                        uint8_t res = (uint8_t)(((int8_t)r8) >> 1);
+                        update_flags(res == 0, SET_0, SET_0, right_set);
+                        write_r8(idx, res);
+                        dots += 8;
+                        pc.r16 += 2;
+                        return;
+                    }
+                    case 0x30: { // swap r8
+                        uint8_t idx = inst2 & 0x7;
+                        uint8_t r8 = read_r8(idx);
+                        uint8_t up = r8 & 0xF0;
+                        uint8_t lo = r8 & 0x0F;
+                        uint8_t res = (up >> 4) | (lo << 4);
+                        update_flags(res == 0, SET_0, SET_0, SET_0);
+                        write_r8(idx, res);
+                        dots += 8;
+                        pc.r16 += 2;
+                        return;
+                    }
+                    case 0x38: { // srl r8
+                        uint8_t idx = inst2 & 0x7;
+                        uint8_t r8 = read_r8(idx);
+                        uint8_t right_set = r8 & 1;
+                        uint8_t res = r8 >> 1;
+                        update_flags(res == 0, SET_0, SET_0, right_set);
+                        write_r8(idx, res);
+                        dots += 8;
+                        pc.r16 += 2;
                         return;
                     }
                 }
                 break;
+            }
+            case 0x40: {
+                uint8_t idx = inst2 & 0x7;
+                uint8_t bit_idx = (inst2 >> 3) & 0x7;
+                uint8_t r8 = read_r8(idx);
+                update_flags((r8 >> bit_idx) & 1 == 0, SET_0, SET_1, LEAVE);
+                dots += 8;
+                pc.r16 += 2;
+                return;
+            }
+            case 0x80: {
+                uint8_t idx = inst2 & 0x7;
+                uint8_t bit_idx = (inst2 >> 3) & 0x7;
+                uint8_t r8 = read_r8(idx);
+                uint8_t mask = 1 << bit_idx;
+                uint8_t res = r8 & ~(mask);
+                write_r8(idx, res);
+                dots += 8;
+                pc.r16 += 2;
+                return;
+            }
+            case 0xC0: {
+                uint8_t idx = inst2 & 0x7;
+                uint8_t bit_idx = (inst2 >> 3) & 0x7;
+                uint8_t r8 = read_r8(idx);
+                uint8_t mask = 1 << bit_idx;
+                uint8_t res = r8 | mask;
+                write_r8(idx, res);
+                dots += 8;
+                pc.r16 += 2;
+                return;
             }
             }
             }
