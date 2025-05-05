@@ -8,6 +8,7 @@
 #include <rom.h>
 #include <cpu.h>
 #include <util.h>
+#include <display.h>
 
 void usage(void) {
     printf("Usage: gbemu [OPTIONS]\n");
@@ -49,31 +50,11 @@ int main(int argc, char *argv[])
 
     // load_rom(rom_path);
 
-    // rom = malloc(3);
-    // rom[0] = 0x01;
-    // rom[1] = 0x34;
-    // rom[2] = 0x12;
+    init_display();
 
-    // execute();
+    sleep(3);
 
-    // dump_cpu_state();
-
-    rom = malloc(4);
-    rom[0] = 0x21; // LD HL, 0x0FFF
-    rom[1] = 0xFF;
-    rom[2] = 0x0F;
-    rom[3] = 0x09; // ADD HL, BC
-
-    // Initialize BC
-    bc.r16 = 0x0001;
-
-    execute();
-
-    dump_cpu_state();
-
-    execute();
-
-    dump_cpu_state();
+    free_display();
 
     return 0;
 }

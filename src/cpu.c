@@ -13,7 +13,7 @@ reg_t hl = {0};
 reg_t sp = {0};
 reg_t pc = {0}; // TODO: Change to 0x100 if not running boot
 
-size_t dots = 0;
+uint64_t dots = 0;
 
 bool ime = false;
 
@@ -272,6 +272,38 @@ bool check_cond(uint8_t idx) {
 }
 
 void execute(void) {
+    // Service Interrupts
+
+    if (ime) {
+        for (int i = 1; i != 0x20; i <<= 1) { // loop over bitmasks
+            if ((r_ie & i) && (r_if & i)) {
+                r_if &= ~i;
+                ime = false;
+                sp.r16 -= 2;
+                write_imm16(sp.r16, pc.r16);
+                dots += 20;
+                switch (i) {
+                    case 0x01: // VBlank
+                        pc.r16 = 0x40; 
+                        break;
+                    case 0x02: // STAT
+                        pc.r16 = 0x48; 
+                        break; 
+                    case 0x04: // Timer
+                        pc.r16 = 0x50; 
+                        break; 
+                    case 0x08: // Serial
+                        pc.r16 = 0x58; 
+                        break; 
+                    case 0x10: // Joypad
+                        pc.r16 = 0x60; 
+                        break; 
+                }
+                return;
+            }
+        }
+    }
+
     uint8_t inst = read_mem(pc.r16);
 
     switch (inst & 0xC0) {
@@ -1055,7 +1087,7 @@ void execute(void) {
                 uint8_t idx = inst2 & 0x7;
                 uint8_t bit_idx = (inst2 >> 3) & 0x7;
                 uint8_t r8 = read_r8(idx);
-                update_flags((r8 >> bit_idx) & 1 == 0, SET_0, SET_1, LEAVE);
+                update_flags(((r8 >> bit_idx) & 1) == 0, SET_0, SET_1, LEAVE);
                 if (idx == 6) {
                     dots += 12;
                 } else {
@@ -1100,10 +1132,6 @@ void execute(void) {
         break;
     }
     }
-
-
-    // TODO: go back and check [HL] r8 instructions for their clock cycles
-
 
     fprintf(stderr, "Invalid opcode 0x%X, exiting...\n", inst);
     exit(1);

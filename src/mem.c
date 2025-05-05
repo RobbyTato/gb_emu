@@ -63,10 +63,10 @@ uint8_t r_lcdc = 0;
 uint8_t r_ly = 0;
 uint8_t r_lyc = 0;
 uint8_t r_stat = 0;
-uint8_t scy = 0;
-uint8_t scx = 0;
-uint8_t wy = 0;
-uint8_t wx = 0; // x pos + 7; i.e. wx = 7 and wy = 0 is flush
+uint8_t r_scy = 0;
+uint8_t r_scx = 0;
+uint8_t r_wy = 0;
+uint8_t r_wx = 0; // x pos + 7; i.e. wx = 7 and wy = 0 is flush
 
 // Palette registers
 uint8_t r_bgp = 0;

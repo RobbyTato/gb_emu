@@ -48,7 +48,7 @@ extern uint8_t r_nr21, r_nr22, r_nr23, r_nr24;
 extern uint8_t r_nr30, r_nr31, r_nr32, r_nr33, r_nr34;
 extern uint8_t r_nr41, r_nr42, r_nr43, r_nr44;
 extern uint8_t r_lcdc, r_ly, r_lyc, r_stat;
-extern uint8_t scy, scx, wy, wx;
+extern uint8_t r_scy, r_scx, r_wy, r_wx;
 extern uint8_t r_bgp, r_obp0, r_obp1;
 extern uint8_t r_boot_rom_mapped;
 extern uint8_t m_wave[16];
