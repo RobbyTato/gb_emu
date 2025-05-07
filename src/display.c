@@ -69,6 +69,32 @@ void free_display(void) {
     SDL_Quit();
 }
 
+void draw_pixels_until(size_t until) {
+    uint8_t tile_y = ((r_ly + r_scy) % 256) / 8;
+    uint16_t tile_map = r_lcdc & LCDC_BG_TILE_MAP_AREA ? 1 : 0;
+    for (; last_pixel < until; last_pixel++) {
+        uint8_t tile_x = ((last_pixel + r_scx) % 256) / 8;
+        uint8_t tile_index = 
+            vram_maps[tile_map][(32 * tile_y) + tile_x];
+        uint8_t pixel_x = 7 - ((last_pixel + r_scx) % 8);
+        uint8_t pixel_y = (r_ly + r_scy) % 8;
+        size_t offset = pixel_y * 2;
+        uint8_t lsb, msb;
+        if (r_lcdc & LCDC_BG_WIN_TILE_DATA_AREA) {
+            lsb = (vram_tiles[tile_index][offset] >> pixel_x) & 1;
+            msb = (vram_tiles[tile_index][offset + 1] >> pixel_x) & 1;
+        } else {
+            size_t new_index = 256 + (int8_t)tile_index;
+            lsb = (vram_tiles[new_index][offset] >> pixel_x) & 1;
+            msb = (vram_tiles[new_index][offset + 1] >> pixel_x) & 1;
+        }
+        uint8_t pixel_color_index = (msb << 1) | lsb;
+        Uint32 color = 
+            palette[(r_bgp >> (pixel_color_index * 2)) & 0x3];
+        framebuffer[(160 * r_ly) + last_pixel] = color;
+    }
+}
+
 void update_display(void) {
     if (!(r_lcdc & LCDC_LCD_PPU_ENABLED)) {
         // TODO: Clear display
@@ -110,79 +136,13 @@ void update_display(void) {
         if (scanline_dots < 92) {
             return;
         }
-        uint8_t tile_y = ((r_ly + r_scy) % 256) / 8;
-        uint16_t tile_map = r_lcdc & LCDC_BG_TILE_MAP_AREA ? 1 : 0;
-        
-        if (r_lcdc & LCDC_BG_WIN_TILE_DATA_AREA) {
-            for (; last_pixel <= scanline_dots - 92; last_pixel++) {
-                uint8_t tile_x = ((last_pixel + r_scx) % 256) / 8;
-                uint8_t tile_index = 
-                    vram_maps[tile_map][(32 * tile_y) + tile_x];
-                uint8_t pixel_x = 8 - ((last_pixel + r_scx) % 8);
-                uint8_t pixel_y = (r_ly + r_scy) % 8;
-                uint8_t lsb = (vram_tiles[tile_index][pixel_y * 2] >> pixel_x) & 1;
-                uint8_t msb = (vram_tiles[tile_index][(pixel_y * 2) + 1] >> pixel_x) & 1;
-                uint8_t pixel_color_index = (msb << 1) | lsb;
-                Uint32 color = 
-                    palette[(r_bgp >> (pixel_color_index * 2)) & 0x3];
-                // printf("%x", r_bgp);
-                framebuffer[(160 * r_ly) + last_pixel] = color;
-            }
-        } else {
-            for (; last_pixel <= scanline_dots - 92; last_pixel++) {
-                uint8_t tile_x = ((last_pixel + r_scx) % 256) / 8;
-                uint8_t tile_index = 
-                    vram_maps[tile_map][(32 * tile_y) + tile_x];
-                uint8_t pixel_x = 8 - ((last_pixel + r_scx) % 8);
-                uint8_t pixel_y = (r_ly + r_scy) % 8;
-                uint8_t lsb = (vram_tiles[256 + (int8_t)tile_index][pixel_y * 2] >> pixel_x) & 1;
-                uint8_t msb = (vram_tiles[256 + (int8_t)tile_index][(pixel_y * 2) + 1] >> pixel_x) & 1;
-                uint8_t pixel_color_index = (msb << 1) | lsb;
-                Uint32 color = 
-                    palette[(r_bgp >> (pixel_color_index * 2)) & 0x3];
-                // printf("%x", r_bgp);
-                framebuffer[(160 * r_ly) + last_pixel] = color;
-            }
-        }
+        draw_pixels_until(scanline_dots - 91);
         return;
     }
     // Mode 0 (Horizontal Blank)
     if (last_mode != 0 && 252 <= scanline_dots && scanline_dots < 456) {
         last_mode = 0;
-        uint8_t tile_y = ((r_ly + r_scy) % 256) / 8;
-        uint16_t tile_map = r_lcdc & LCDC_BG_TILE_MAP_AREA ? 1 : 0;
-        
-        if (r_lcdc & LCDC_BG_WIN_TILE_DATA_AREA) {
-            for (; last_pixel < 160; last_pixel++) {
-                uint8_t tile_x = ((last_pixel + r_scx) % 256) / 8;
-                uint8_t tile_index = 
-                    vram_maps[tile_map][(32 * tile_y) + tile_x];
-                uint8_t pixel_x = 8 - ((last_pixel + r_scx) % 8);
-                uint8_t pixel_y = (r_ly + r_scy) % 8;
-                uint8_t lsb = (vram_tiles[tile_index][pixel_y * 2] >> pixel_x) & 1;
-                uint8_t msb = (vram_tiles[tile_index][(pixel_y * 2) + 1] >> pixel_x) & 1;
-                uint8_t pixel_color_index = (msb << 1) | lsb;
-                Uint32 color = 
-                    palette[(r_bgp >> (pixel_color_index * 2)) & 0x3];
-                // printf("%x", r_bgp);
-                framebuffer[(160 * r_ly) + last_pixel] = color;
-            }
-        } else {
-            for (; last_pixel < 160; last_pixel++) {
-                uint8_t tile_x = ((last_pixel + r_scx) % 256) / 8;
-                uint8_t tile_index = 
-                    vram_maps[tile_map][(32 * tile_y) + tile_x];
-                uint8_t pixel_x = 8 - ((last_pixel + r_scx) % 8);
-                uint8_t pixel_y = (r_ly + r_scy) % 8;
-                uint8_t lsb = (vram_tiles[256 + (int8_t)tile_index][pixel_y * 2] >> pixel_x) & 1;
-                uint8_t msb = (vram_tiles[256 + (int8_t)tile_index][(pixel_y * 2) + 1] >> pixel_x) & 1;
-                uint8_t pixel_color_index = (msb << 1) | lsb;
-                Uint32 color = 
-                    palette[(r_bgp >> (pixel_color_index * 2)) & 0x3];
-                // printf("%x", r_bgp);
-                framebuffer[(160 * r_ly) + last_pixel] = color;
-            }
-        }
+        draw_pixels_until(160);
         last_pixel = 0;
         return;
     }

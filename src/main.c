@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 
     init_display();
 
-    rom[0x104] = 0; // mess with boot
+    // rom[0x104] = 0; // mess with boot
 
     while (true) {
         execute();
