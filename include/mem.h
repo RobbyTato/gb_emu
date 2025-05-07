@@ -31,6 +31,16 @@ typedef uint8_t obj[OBJ_SIZE];
 #define HRAM_A 0xFF80
 #define IE_REG_A 0xFFFF
 
+// LCDC bitmasks
+#define LCDC_LCD_PPU_ENABLED 0x80
+#define LCDC_WINDOW_TILE_MAP_AREA 0x40
+#define LCDC_WINDOW_ENABLED 0x20
+#define LCDC_BG_WIN_TILE_DATA_AREA 0x10
+#define LCDC_BG_TILE_MAP_AREA 0x08
+#define LCDC_OBJ_SIZE 0x04
+#define LCDC_OBJ_ENABLED 0x02
+#define LCDC_BG_WIN_ENABLED 0x01
+
 // Memory components
 extern tile vram_tiles[VRAM_TILES_NUM];
 extern map vram_maps[VRAM_MAP_NUM];

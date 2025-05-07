@@ -59,7 +59,7 @@ uint8_t r_nr43 = 0; // Frequency & randomness
 uint8_t r_nr44 = 0; // Control
 
 // LCD control registers
-uint8_t r_lcdc = 0;
+uint8_t r_lcdc = LCDC_LCD_PPU_ENABLED;
 uint8_t r_ly = 0;
 uint8_t r_lyc = 0;
 uint8_t r_stat = 0;

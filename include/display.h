@@ -12,6 +12,6 @@ extern SDL_Window *window;
 
 void init_display(void);
 void free_display(void);
-void generate_frame(void);
+void update_display(void);
 
 #endif // DISPLAY_H
