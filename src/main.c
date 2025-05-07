@@ -54,10 +54,12 @@ int main(int argc, char *argv[])
 
     init_display();
 
+    rom[0x104] = 0; // mess with boot
+
     while (true) {
         execute();
         update_display();
-        dump_cpu_state();
+        // dump_cpu_state();
     }
 
     free_display();

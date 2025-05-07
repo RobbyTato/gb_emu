@@ -3,12 +3,14 @@
 #include <stdlib.h>
 #include <rom.h>
 #include <mem.h>
+#include <util.h>
 
 // Memory
 tile vram_tiles[VRAM_TILES_NUM];
 map vram_maps[VRAM_MAP_NUM];
 obj oam[OBJ_NUM];
 uint8_t wram[WRAM_SIZE];
+uint8_t io_reg[IO_REG_SIZE];
 uint8_t hram[HRAM_SIZE];
 
 // Joypad register
@@ -192,11 +194,40 @@ uint8_t read_mem(uint16_t addr) {
             return r_nr51;
         case 0xFF26:
             return r_nr52;
+        case 0xFF40:
+            return r_lcdc;
+        case 0xFF41:
+            return r_stat;
+        case 0xFF42:
+            return r_scy;
+        case 0xFF43:
+            return r_scx;
+        case 0xFF44:
+            return r_ly;
+        case 0xFF45:
+            return r_lyc;
+        case 0xFF47:
+            return r_bgp;
+        case 0xFF48:
+            return r_obp0;
+        case 0xFF49:
+            return r_obp1;
+        case 0xFF4A:
+            return r_wy;
+        case 0xFF4B:
+            return r_wx;
+        case 0xFF50:
+            return r_boot_rom_mapped;
     }
 
     // Wave pattern
     if (0xFF30 <= addr && addr < 0xFF40) {
         return m_wave[addr - 0xFF30];
+    }
+
+    // Leftover memory in IO register range
+    if (0xFF00 <= addr && addr < 0xFF80) {
+        return io_reg[addr - IO_A];
     }
 
     fprintf(stderr, "Attempted read at addr %d\n", (int)addr);
@@ -214,6 +245,7 @@ void write_mem(uint16_t addr, uint8_t val) {
         case 0:
             fprintf(stderr, "Attempted write at addr %d\n", (int)addr);
             fprintf(stderr, "Cannot write to ROM, exiting...\n");
+            dump_cpu_state();
             exit(1);
         case 1:
             ((uint8_t *)vram_tiles)[addr - VRAM_TILES_A] = val;
@@ -336,11 +368,53 @@ void write_mem(uint16_t addr, uint8_t val) {
         case 0xFF26:
             r_nr52 = val;
             return;
+        case 0xFF40:
+            r_lcdc = val;
+            return;
+        case 0xFF41:
+            r_stat = val;
+            return;
+        case 0xFF42:
+            r_scy = val;
+            return;
+        case 0xFF43:
+            r_scx = val;
+            return;
+        case 0xFF44:
+            r_ly = val;
+            return;
+        case 0xFF45:
+            r_lyc = val;
+            return;
+        case 0xFF47:
+            r_bgp = val;
+            return;
+        case 0xFF48:
+            r_obp0 = val;
+            return;
+        case 0xFF49:
+            r_obp1 = val;
+            return;
+        case 0xFF4A:
+            r_wy = val;
+            return;
+        case 0xFF4B:
+            r_wx = val;
+            return;
+        case 0xFF50:
+            r_boot_rom_mapped = val;
+            return;
     }
 
     // Wave pattern
     if (0xFF30 <= addr && addr < 0xFF40) {
         m_wave[addr - 0xFF30] = val;
+        return;
+    }
+
+    // Leftover memory in IO register range
+    if (0xFF00 <= addr && addr < 0xFF80) {
+        io_reg[addr - IO_A] = val;
         return;
     }
 

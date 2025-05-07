@@ -10,7 +10,7 @@ SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
 SDL_Texture *texture = NULL;
 Uint32 *framebuffer = NULL;
-const Uint32 palette[4] = {0xFF000000, 0xFF555555, 0xFFAAAAAA, 0xFFFFFFFF};
+const Uint32 palette[4] = {0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000};
 size_t last_mode = 2;
 size_t last_pixel = 0;
 
@@ -74,7 +74,7 @@ void update_display(void) {
         // TODO: Clear display
         return;
     }
-    printf("%ld", last_mode);
+    // printf("%ld", last_mode);
     size_t frame_dots = dots % 70224;
     size_t scanline_dots = frame_dots % 456;
     r_ly = frame_dots / 456;
@@ -118,38 +118,30 @@ void update_display(void) {
                 uint8_t tile_x = ((last_pixel + r_scx) % 256) / 8;
                 uint8_t tile_index = 
                     vram_maps[tile_map][(32 * tile_y) + tile_x];
-                uint8_t pixel_x = (last_pixel + r_scx) % 8;
+                uint8_t pixel_x = 8 - ((last_pixel + r_scx) % 8);
                 uint8_t pixel_y = (r_ly + r_scy) % 8;
                 uint8_t lsb = (vram_tiles[tile_index][pixel_y * 2] >> pixel_x) & 1;
                 uint8_t msb = (vram_tiles[tile_index][(pixel_y * 2) + 1] >> pixel_x) & 1;
                 uint8_t pixel_color_index = (msb << 1) | lsb;
                 Uint32 color = 
                     palette[(r_bgp >> (pixel_color_index * 2)) & 0x3];
-                if (framebuffer) {
-                    framebuffer[(160 * r_ly) + last_pixel] = color;
-                } else {
-                    fprintf(stderr, "Draw failed: %s\n", SDL_GetError());
-                    exit(1);
-                }
+                // printf("%x", r_bgp);
+                framebuffer[(160 * r_ly) + last_pixel] = color;
             }
         } else {
             for (; last_pixel <= scanline_dots - 92; last_pixel++) {
                 uint8_t tile_x = ((last_pixel + r_scx) % 256) / 8;
                 uint8_t tile_index = 
                     vram_maps[tile_map][(32 * tile_y) + tile_x];
-                uint8_t pixel_x = (last_pixel + r_scx) % 8;
+                uint8_t pixel_x = 8 - ((last_pixel + r_scx) % 8);
                 uint8_t pixel_y = (r_ly + r_scy) % 8;
                 uint8_t lsb = (vram_tiles[256 + (int8_t)tile_index][pixel_y * 2] >> pixel_x) & 1;
                 uint8_t msb = (vram_tiles[256 + (int8_t)tile_index][(pixel_y * 2) + 1] >> pixel_x) & 1;
                 uint8_t pixel_color_index = (msb << 1) | lsb;
                 Uint32 color = 
                     palette[(r_bgp >> (pixel_color_index * 2)) & 0x3];
-                if (framebuffer) {
-                    framebuffer[(160 * r_ly) + last_pixel] = color;
-                } else {
-                    fprintf(stderr, "Draw failed: %s\n", SDL_GetError());
-                    exit(1);
-                }
+                // printf("%x", r_bgp);
+                framebuffer[(160 * r_ly) + last_pixel] = color;
             }
         }
         return;
@@ -165,38 +157,30 @@ void update_display(void) {
                 uint8_t tile_x = ((last_pixel + r_scx) % 256) / 8;
                 uint8_t tile_index = 
                     vram_maps[tile_map][(32 * tile_y) + tile_x];
-                uint8_t pixel_x = (last_pixel + r_scx) % 8;
+                uint8_t pixel_x = 8 - ((last_pixel + r_scx) % 8);
                 uint8_t pixel_y = (r_ly + r_scy) % 8;
                 uint8_t lsb = (vram_tiles[tile_index][pixel_y * 2] >> pixel_x) & 1;
                 uint8_t msb = (vram_tiles[tile_index][(pixel_y * 2) + 1] >> pixel_x) & 1;
                 uint8_t pixel_color_index = (msb << 1) | lsb;
                 Uint32 color = 
                     palette[(r_bgp >> (pixel_color_index * 2)) & 0x3];
-                if (framebuffer) {
-                    framebuffer[(160 * r_ly) + last_pixel] = color;
-                } else {
-                    fprintf(stderr, "Draw failed: %s\n", SDL_GetError());
-                    exit(1);
-                }
+                // printf("%x", r_bgp);
+                framebuffer[(160 * r_ly) + last_pixel] = color;
             }
         } else {
             for (; last_pixel < 160; last_pixel++) {
                 uint8_t tile_x = ((last_pixel + r_scx) % 256) / 8;
                 uint8_t tile_index = 
                     vram_maps[tile_map][(32 * tile_y) + tile_x];
-                uint8_t pixel_x = (last_pixel + r_scx) % 8;
+                uint8_t pixel_x = 8 - ((last_pixel + r_scx) % 8);
                 uint8_t pixel_y = (r_ly + r_scy) % 8;
                 uint8_t lsb = (vram_tiles[256 + (int8_t)tile_index][pixel_y * 2] >> pixel_x) & 1;
                 uint8_t msb = (vram_tiles[256 + (int8_t)tile_index][(pixel_y * 2) + 1] >> pixel_x) & 1;
                 uint8_t pixel_color_index = (msb << 1) | lsb;
                 Uint32 color = 
                     palette[(r_bgp >> (pixel_color_index * 2)) & 0x3];
-                if (framebuffer) {
-                    framebuffer[(160 * r_ly) + last_pixel] = color;
-                } else {
-                    fprintf(stderr, "Draw failed: %s\n", SDL_GetError());
-                    exit(1);
-                }
+                // printf("%x", r_bgp);
+                framebuffer[(160 * r_ly) + last_pixel] = color;
             }
         }
         last_pixel = 0;

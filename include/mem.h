@@ -13,6 +13,7 @@
 #define OBJ_NUM 40
 #define WRAM_SIZE 0x2000
 #define HRAM_SIZE 0x7F
+#define IO_REG_SIZE 0x80
 
 typedef uint8_t tile[TILE_SIZE];
 typedef uint8_t map[MAP_SIZE];
@@ -46,6 +47,7 @@ extern tile vram_tiles[VRAM_TILES_NUM];
 extern map vram_maps[VRAM_MAP_NUM];
 extern obj oam[OBJ_NUM];
 extern uint8_t wram[WRAM_SIZE];
+extern uint8_t io_reg[IO_REG_SIZE];
 extern uint8_t hram[HRAM_SIZE];
 
 // Registers
