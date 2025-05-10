@@ -14,9 +14,6 @@ uint8_t wram[WRAM_SIZE];
 uint8_t io_reg[IO_REG_SIZE];
 uint8_t hram[HRAM_SIZE];
 
-// Joypad register
-uint8_t r_joypad = 0;
-
 // Timer registers
 uint8_t r_div = 0;
 uint8_t r_tima = 0;
@@ -79,7 +76,17 @@ uint8_t r_obp1 = 0;
 // Boot ROM mapped register
 uint8_t r_boot_rom_mapped = 0;
 
-// TODO: can index map as a bitfield, check 2. Memory Map
+// Button Inputs
+bool b_buttons_select = false;
+bool b_dpad_select = false;
+bool b_left = false;
+bool b_right = false;
+bool b_up = false;
+bool b_down = false;
+bool b_a = false;
+bool b_b = false;
+bool b_start = false;
+bool b_select = false;
 
 int bin_search(const uint16_t arr[], int size, const uint16_t target) {
     int left = 0;
@@ -145,8 +152,29 @@ uint8_t read_mem(uint16_t addr) {
 
     // Handle I/O registers
     switch (addr) {
-        case 0xFF00:
-            return r_joypad;
+        case 0xFF00: 
+            switch ((b_buttons_select << 1) | b_dpad_select) {
+                case 0x3:
+                    return ((((((!(b_start || b_down) << 1) |
+                            !(b_select || b_up)) << 1)  |
+                            !(b_b || b_left)) << 1)     |
+                            !(b_a || b_right)) |
+                            0xC0;
+                case 0x2:
+                    return ((((((!b_start << 1) |
+                            !b_select) << 1) |
+                            !b_b) << 1) |
+                            !b_a) |
+                            0xD0;
+                case 0x1:
+                    return ((((((!b_down << 1) |
+                            !b_up) << 1) |
+                            !b_left) << 1) |
+                            !b_right) |
+                            0xE0;
+                case 0x0:
+                    return 0xFF;
+        }
         case 0xFF04:
             return r_div;
         case 0xFF05:
@@ -296,7 +324,8 @@ void write_mem(uint16_t addr, uint8_t val) {
     // Handle I/O registers
     switch (addr) {
         case 0xFF00:
-            r_joypad = val;
+            b_buttons_select = !!(val & 0x20);
+            b_dpad_select = !!(val & 0x10);
             return;
         case 0xFF04:
             r_div = val;

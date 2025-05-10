@@ -11,6 +11,7 @@
 #include <mem.h>
 #include <util.h>
 #include <display.h>
+#include <debug.h>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 
@@ -53,15 +54,19 @@ int main(int argc, char *argv[])
 
     char *rom_path = NULL;
     bool run_boot = false;
+    bool debug_mode = false;
     int opt;
 
-    while ((opt = getopt(argc, argv, "r:bh")) != -1) {
+    while ((opt = getopt(argc, argv, "r:bhd")) != -1) {
         switch (opt) {
             case 'r':
                 rom_path = optarg;
                 break;
             case 'b':
                 run_boot = true;
+                break;
+            case 'd':
+                debug_mode = true;
                 break;
             case 'h':
                 usage();
@@ -89,20 +94,103 @@ int main(int argc, char *argv[])
 
     load_rom(rom_path);
 
-    // memcpy(rom, dmg_boot_rom, DMG_BOOT_ROM_SIZE);
-
     init_display();
 
-    // rom[0x104] = 0; // mess with boot
-    
-    // Main loop
-    while (true) {
+    if (debug_mode) {
+        init_debug();
+    }
+
+    bool quit = false;
+
+    while (!quit) {
         double frame_start = (double)SDL_GetPerformanceCounter();
+
+        // Handle SDL events
+        SDL_Event event;
+        while (SDL_PollEvent(&event)) {
+            switch (event.type) {
+                case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+                    quit = true;
+                    break;
+                case SDL_EVENT_KEY_DOWN:
+                    if (event.key.key == SDLK_A) {
+                        b_a = true;
+                        r_if |= 0x10; // request joypad interrupt
+                        continue;
+                    } else if (event.key.key == SDLK_S) {
+                        b_b = true;
+                        r_if |= 0x10; // request joypad interrupt
+                        continue;
+                    } else if (event.key.key == SDLK_ESCAPE) {
+                        b_start = true;
+                        r_if |= 0x10; // request joypad interrupt
+                        continue;
+                    } else if (event.key.key == SDLK_BACKSPACE) {
+                        b_select = true;
+                        r_if |= 0x10; // request joypad interrupt
+                        continue;
+                    } else if (event.key.key == SDLK_LEFT) {
+                        b_left = true;
+                        r_if |= 0x10; // request joypad interrupt
+                        continue;
+                    } else if (event.key.key == SDLK_RIGHT) {
+                        b_right = true;
+                        r_if |= 0x10; // request joypad interrupt
+                        continue;
+                    } else if (event.key.key == SDLK_UP) {
+                        b_up = true;
+                        r_if |= 0x10; // request joypad interrupt
+                        continue;
+                    } else if (event.key.key == SDLK_DOWN) {
+                        b_down = true;
+                        r_if |= 0x10; // request joypad interrupt
+                        continue;
+                    }
+                    break;
+                case SDL_EVENT_KEY_UP:
+                    if (event.key.key == SDLK_A) {
+                        b_a = false;
+                        continue;
+                    } else if (event.key.key == SDLK_S) {
+                        b_b = false;
+                        continue;
+                    } else if (event.key.key == SDLK_ESCAPE) {
+                        b_start = false;
+                        continue;
+                    } else if (event.key.key == SDLK_BACKSPACE) {
+                        b_select = false;
+                        continue;
+                    } else if (event.key.key == SDLK_LEFT) {
+                        b_left = false;
+                        continue;
+                    } else if (event.key.key == SDLK_RIGHT) {
+                        b_right = false;
+                        continue;
+                    } else if (event.key.key == SDLK_UP) {
+                        b_up = false;
+                        continue;
+                    } else if (event.key.key == SDLK_DOWN) {
+                        b_down = false;
+                        continue;
+                    }
+                    break;
+            }
+        }
+        // printf("%d %d %d %d %d %d %d %d\n", b_a, b_b, b_start, b_select, b_left, b_right, b_up, b_down);
+        // printf("%X %d %X %X\n", read_mem(0xFF00), ime, r_ie, r_if);
+
         // Frame loop
         while (!update_display(frame_start)) {
             execute();
             // dump_cpu_state();
         }
+        if (debug_mode) {
+            update_debug();
+        }
+    }
+
+    if (debug_mode) {
+        free_debug();
     }
 
     free_display();

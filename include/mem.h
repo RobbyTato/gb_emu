@@ -2,6 +2,7 @@
 #define MEMORY_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #define TILE_SIZE 16
 #define MAP_SIZE 1024
@@ -49,8 +50,7 @@ extern uint8_t wram[WRAM_SIZE];
 extern uint8_t io_reg[IO_REG_SIZE];
 extern uint8_t hram[HRAM_SIZE];
 
-// Registers
-extern uint8_t r_joypad;
+// Hardware Registers
 extern uint8_t r_div, r_tima, r_tma, r_tac;
 extern uint8_t r_ie, r_if;
 extern uint8_t r_nr50, r_nr51, r_nr52;
@@ -63,6 +63,16 @@ extern uint8_t r_scy, r_scx, r_wy, r_wx;
 extern uint8_t r_bgp, r_obp0, r_obp1;
 extern uint8_t r_boot_rom_mapped;
 extern uint8_t m_wave[16];
+
+// Button Inputs
+extern bool b_left;
+extern bool b_right;
+extern bool b_up;
+extern bool b_down;
+extern bool b_a;
+extern bool b_b;
+extern bool b_start;
+extern bool b_select;
 
 // Function prototypes
 uint8_t read_mem(uint16_t addr);

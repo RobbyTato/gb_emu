@@ -10,7 +10,8 @@ SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
 SDL_Texture *texture = NULL;
 Uint32 *framebuffer = NULL;
-const Uint32 palette[4] = {0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000};
+static const Uint32 palette[4] = 
+    {0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000};
 size_t last_mode = 2;
 size_t last_pixel = 0;
 
@@ -76,25 +77,43 @@ void draw_pixels_until(size_t until) {
     uint8_t tile_y = ((r_ly + r_scy) % 256) / 8;
     uint16_t tile_map = r_lcdc & LCDC_BG_TILE_MAP_AREA ? 1 : 0;
     
+    // if (r_lcdc & LCDC_BG_TILE_MAP_AREA) {
+    //     if (r_lcdc & LCDC_BG_WIN_TILE_DATA_AREA) {
+    //         printf("1\n");
+    //     } else {
+    //         printf("2\n");
+    //     }
+    // } else {
+    //     if (r_lcdc & LCDC_BG_WIN_TILE_DATA_AREA) {
+    //         printf("3\n");
+    //     } else {
+    //         printf("4\n");
+    //     }
+    // }
+
     for (; last_pixel < until; last_pixel++) {
         // Get x pos and index of the tile
         uint8_t tile_x = ((last_pixel + r_scx) % 256) / 8;
         uint8_t tile_index = vram_maps[tile_map][(32 * tile_y) + tile_x];
+
         // Get the exact pixel
-        uint8_t pixel_x = 7 - ((last_pixel + r_scx) % 8);
+        uint8_t pixel_x = (last_pixel + r_scx) % 8;
         uint8_t pixel_y = (r_ly + r_scy) % 8;
+
         // Get the color index of the pixel
-        size_t offset = pixel_y * 2;
+        size_t idx_offset = pixel_y * 2;
+        size_t shift_offset = 7 - pixel_x;
         uint8_t lsb, msb;
         if (r_lcdc & LCDC_BG_WIN_TILE_DATA_AREA) {
-            lsb = (vram_tiles[tile_index][offset] >> pixel_x) & 1;
-            msb = (vram_tiles[tile_index][offset + 1] >> pixel_x) & 1;
+            lsb = (vram_tiles[tile_index][idx_offset] >> shift_offset) & 1;
+            msb = (vram_tiles[tile_index][idx_offset + 1] >> shift_offset) & 1;
         } else {
             size_t new_index = 256 + (int8_t)tile_index;
-            lsb = (vram_tiles[new_index][offset] >> pixel_x) & 1;
-            msb = (vram_tiles[new_index][offset + 1] >> pixel_x) & 1;
+            lsb = (vram_tiles[new_index][idx_offset] >> shift_offset) & 1;
+            msb = (vram_tiles[new_index][idx_offset + 1] >> shift_offset) & 1;
         }
         uint8_t pixel_color_index = (msb << 1) | lsb;
+
         // Get the color of the pixel and draw it
         Uint32 color = palette[(r_bgp >> (pixel_color_index * 2)) & 0x3];
         framebuffer[(160 * r_ly) + last_pixel] = color;
