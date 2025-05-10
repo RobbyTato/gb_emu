@@ -2,7 +2,6 @@
 #define MEMORY_H
 
 #include <stdint.h>
-#include <stdbool.h>
 
 #define TILE_SIZE 16
 #define MAP_SIZE 1024

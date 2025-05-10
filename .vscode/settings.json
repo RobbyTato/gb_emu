@@ -4,6 +4,9 @@
         "stdbool.h": "c",
         "stddef.h": "c",
         "random": "c",
-        "display.h": "c"
+        "display.h": "c",
+        "util.h": "c",
+        "stdio.h": "c",
+        "stdlib.h": "c"
     }
 }

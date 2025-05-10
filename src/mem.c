@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <rom.h>
 #include <mem.h>
 #include <util.h>
@@ -76,7 +77,7 @@ uint8_t r_obp0 = 0;
 uint8_t r_obp1 = 0;
 
 // Boot ROM mapped register
-uint8_t r_boot_rom_mapped = 0; // TODO: set to 1 if not running boot ram
+uint8_t r_boot_rom_mapped = 0;
 
 // TODO: can index map as a bitfield, check 2. Memory Map
 
@@ -102,6 +103,10 @@ uint8_t read_mem(uint16_t addr) {
         ROM_A, VRAM_TILES_A, VRAM_MAPS_A, EXT_RAM_A, WRAM_A, 
         ECHO_RAM_A, OAM_A, UNUSED_A, IO_A, HRAM_A, IE_REG_A
     };
+
+    if (!r_boot_rom_mapped && addr < 0x100) {
+        return dmg_boot_rom[addr];
+    }
 
     switch (bin_search(mem_ranges, 11, addr)) {
         case 0:
@@ -243,10 +248,11 @@ void write_mem(uint16_t addr, uint8_t val) {
 
     switch (bin_search(mem_ranges, 11, addr)) {
         case 0:
-            fprintf(stderr, "Attempted write at addr %d\n", (int)addr);
-            fprintf(stderr, "Cannot write to ROM, exiting...\n");
-            dump_cpu_state();
-            exit(1);
+            // fprintf(stderr, "Attempted write at addr %d\n", (int)addr);
+            // fprintf(stderr, "Cannot write to ROM, exiting...\n");
+            // exit(1);
+            // TODO: Handle the case of the tetris rom writing to this range
+            return;
         case 1:
             ((uint8_t *)vram_tiles)[addr - VRAM_TILES_A] = val;
             return;
@@ -268,9 +274,11 @@ void write_mem(uint16_t addr, uint8_t val) {
             ((uint8_t *)oam)[addr - OAM_A] = val;
             return;
         case 7:
-            fprintf(stderr, "Attempted write at addr %d\n", (int)addr);
-            fprintf(stderr, "Unused/Invalid RAM location, exiting...\n");
-            exit(1);
+            // fprintf(stderr, "Attempted write at addr %d\n", (int)addr);
+            // fprintf(stderr, "Unused/Invalid RAM location, exiting...\n");
+            // exit(1);
+            // TODO: Handle the case of the tetris rom writing to this range
+            return;
         case 8:
             break; // handled after this switch
         case 9:

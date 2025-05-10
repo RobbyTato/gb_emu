@@ -69,15 +69,21 @@ void free_display(void) {
     SDL_Quit();
 }
 
+// TODO: Incorporate window and OAM draws, as well as disabling these draws
+// TODO: with LCDC.
 void draw_pixels_until(size_t until) {
+    // Get y pos of tile and the tile map of the tile
     uint8_t tile_y = ((r_ly + r_scy) % 256) / 8;
     uint16_t tile_map = r_lcdc & LCDC_BG_TILE_MAP_AREA ? 1 : 0;
+    
     for (; last_pixel < until; last_pixel++) {
+        // Get x pos and index of the tile
         uint8_t tile_x = ((last_pixel + r_scx) % 256) / 8;
-        uint8_t tile_index = 
-            vram_maps[tile_map][(32 * tile_y) + tile_x];
+        uint8_t tile_index = vram_maps[tile_map][(32 * tile_y) + tile_x];
+        // Get the exact pixel
         uint8_t pixel_x = 7 - ((last_pixel + r_scx) % 8);
         uint8_t pixel_y = (r_ly + r_scy) % 8;
+        // Get the color index of the pixel
         size_t offset = pixel_y * 2;
         uint8_t lsb, msb;
         if (r_lcdc & LCDC_BG_WIN_TILE_DATA_AREA) {
@@ -89,18 +95,19 @@ void draw_pixels_until(size_t until) {
             msb = (vram_tiles[new_index][offset + 1] >> pixel_x) & 1;
         }
         uint8_t pixel_color_index = (msb << 1) | lsb;
-        Uint32 color = 
-            palette[(r_bgp >> (pixel_color_index * 2)) & 0x3];
+        // Get the color of the pixel and draw it
+        Uint32 color = palette[(r_bgp >> (pixel_color_index * 2)) & 0x3];
         framebuffer[(160 * r_ly) + last_pixel] = color;
     }
 }
 
-void update_display(void) {
+// Returns true if this call updates the renderer. This functionality is used
+// to set a framerate by knowing when a frame was drawn
+bool update_display(double frame_start) {
     if (!(r_lcdc & LCDC_LCD_PPU_ENABLED)) {
         // TODO: Clear display
-        return;
+        return false;
     }
-    // printf("%ld", last_mode);
     size_t frame_dots = dots % 70224;
     size_t scanline_dots = frame_dots % 456;
     r_ly = frame_dots / 456;
@@ -109,6 +116,7 @@ void update_display(void) {
         if (last_mode != 1) {
             last_mode = 1;
             r_if |= 1; // Send VBlank Interrupt
+            // Draw to the renderer
             SDL_UnlockTexture(texture);
             SDL_RenderTexture(renderer, texture, NULL, NULL);
             SDL_RenderPresent(renderer);
@@ -120,31 +128,40 @@ void update_display(void) {
             }
             memset(pixels, 0, DISP_WIDTH * DISP_HEIGHT * sizeof(Uint32));
             framebuffer = pixels;
+            // Delay to set frame rate at 59.7 fps
+            double fps = 59.7;
+            double frame_duration_ns = 1000000000.0 / fps;
+            double frame_end = (double)SDL_GetPerformanceCounter();
+            double frame_length = frame_end - frame_start;
+            if (frame_length < frame_duration_ns) {
+                SDL_DelayNS((Uint64)(frame_duration_ns - frame_length));
+            }
+            return true;
         }
-        return;
+        return false;
     }
     // Mode 2 (OAM scan)
     if (last_mode != 2 && scanline_dots < 80) {
         last_mode = 2;
         // TODO: Do the OAM scan
-        return;
+        return false;
     }
     // Mode 3 (Drawing pixels)
     if (80 <= scanline_dots && scanline_dots < 252) {
         last_mode = 3;
-        // Tile fetch
+        // Tile fetch (ignore)
         if (scanline_dots < 92) {
-            return;
+            return false;
         }
         draw_pixels_until(scanline_dots - 91);
-        return;
+        return false;
     }
     // Mode 0 (Horizontal Blank)
     if (last_mode != 0 && 252 <= scanline_dots && scanline_dots < 456) {
         last_mode = 0;
         draw_pixels_until(160);
         last_pixel = 0;
-        return;
+        return false;
     }
-
+    return false;
 }
