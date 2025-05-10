@@ -6,7 +6,7 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/build/json-c"
             ],
-            "defines": [],
+            "defines": ["_POSIX_C_SOURCE=200809L"],
             "compilerPath": null,
             "cStandard": "c99",
             "intelliSenseMode": "linux-gcc-x64"
