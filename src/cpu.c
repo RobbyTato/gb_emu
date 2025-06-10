@@ -460,38 +460,38 @@ void execute(void) {
                 return;
             }
             case 0x27: { // daa
+                uint8_t res = af.r8.h;
                 uint8_t adj = 0;
-                if (get_n_flag()) {
+                bool carry = false;
+
+                if (!get_n_flag()) {
+                    if (get_h_flag() || (res & 0xF) > 0x9) {
+                        adj |= 0x06;
+                    }
+                    if (get_c_flag() || res > 0x99) {
+                        adj |= 0x60;
+                        carry = true;
+                    }
+                    res += adj;
+                } else {
                     if (get_h_flag()) {
-                        adj += 0x6;
+                        adj |= 0x06;
                     }
                     if (get_c_flag()) {
-                        adj += 0x60;
+                        adj |= 0x60;
+                        carry = true;
                     }
-                    uint8_t temp = af.r8.h;
-                    af.r8.h -= adj;
-                    update_flags(
-                        af.r8.h == 0, 
-                        LEAVE, 
-                        SET_0, 
-                        adj > temp
-                    );
-                } else {
-                    if (get_h_flag() || (af.r8.h & 0xF) > 0x9) {
-                        adj += 0x6;
-                    }
-                    if (get_c_flag() || af.r8.h > 0x99) {
-                        adj += 0x60;
-                    }
-                    uint8_t res = af.r8.h + adj;
-                    update_flags(
-                        res == 0, 
-                        LEAVE, 
-                        SET_0, 
-                        (res < af.r8.h) || (res < adj)
-                    );
-                    af.r8.h = res;
+                    res -= adj;
                 }
+
+                af.r8.h = res;
+                update_flags(
+                    res == 0,
+                    LEAVE,
+                    SET_0,
+                    carry ? SET_1 : LEAVE
+                );
+
                 dots += 4;
                 pc.r16++;
                 return;
