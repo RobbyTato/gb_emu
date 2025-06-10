@@ -11,7 +11,7 @@ reg_t bc = {0};
 reg_t de = {0};
 reg_t hl = {0};
 reg_t sp = {0};
-reg_t pc = {0}; // TODO: Change to 0x100 if not running boot
+reg_t pc = {0};
 
 uint64_t dots = 0;
 
@@ -820,7 +820,7 @@ void execute(void) {
                 pc.r16 += 2;
                 return;
             }
-            case 0xEE: { // xor a, r8
+            case 0xEE: { // xor a, imm8
                 uint8_t imm8 = read_mem(pc.r16 + 1);
                 af.r8.h ^= imm8;
                 update_flags(af.r8.h == 0, SET_0, SET_0, SET_0);
@@ -836,7 +836,7 @@ void execute(void) {
                 pc.r16 += 2;
                 return;
             }
-            case 0xFE: { // cp a, r8
+            case 0xFE: { // cp a, imm8
                 uint8_t imm8 = read_mem(pc.r16 + 1);
                 uint8_t res = af.r8.h - imm8;
                 update_flags(
