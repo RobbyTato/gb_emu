@@ -17,6 +17,7 @@ reg_t pc = {0};
 
 uint64_t dots = 0;
 
+bool set_ime = false;
 bool ime = false;
 
 // Timer variables
@@ -285,8 +286,13 @@ bool check_cond(uint8_t idx) {
 }
 
 void execute(void) {
-    // Service Interrupts
+    // Set IME if EI instruction ran last time
+    if (set_ime) {
+        ime = true;
+        set_ime = false;
+    }
 
+    // Service Interrupts
     if (ime) {
         for (int i = 1; i != 0x20; i <<= 1) { // loop over bitmasks
             if ((r_ie & i) && (r_if & i)) {
@@ -960,8 +966,7 @@ void execute(void) {
                 pc.r16++;
                 return;
             case 0xFB: // ei
-                ime = true; // TODO: somehow find a way to set this after the
-                            // TODO: next instruction runs
+                set_ime = true;
                 dots += 4;
                 pc.r16++;
                 return;
