@@ -6,6 +6,8 @@
 #include <mem.h>
 #include <cpu.h>
 
+// CPU state
+
 reg_t af = {0};
 reg_t bc = {0};
 reg_t de = {0};
@@ -16,6 +18,17 @@ reg_t pc = {0};
 uint64_t dots = 0;
 
 bool ime = false;
+
+// Timer variables
+
+const uint64_t div_incr_interval = 256;
+uint64_t last_div_incr_time = 0;
+
+const uint64_t tima_00_incr_interval = 1024;
+const uint64_t tima_01_incr_interval = 16;
+const uint64_t tima_10_incr_interval = 64;
+const uint64_t tima_11_incr_interval = 256;
+uint64_t last_tima_incr_time = 0;
 
 uint16_t read_imm16(uint16_t addr) {
     // Little endian
@@ -1135,4 +1148,54 @@ void execute(void) {
 
     fprintf(stderr, "Invalid opcode 0x%X, exiting...\n", inst);
     exit(1);
+}
+
+void update_timer_regs(void) {
+    // Update DIV register (16384Hz)
+    while (dots - last_div_incr_time >= div_incr_interval) {
+        r_div++;
+        last_div_incr_time += div_incr_interval;
+    }
+    // Update TIMA
+    switch (r_tac & 0x3) {
+        case 0: // 4096Hz
+            while (dots - last_tima_incr_time >= tima_00_incr_interval) {
+                if ((r_tac & 0x4) && (++r_tima == 0)) { // overflow
+                    r_tima = r_tma;
+                    r_if |= 0x4; // request timer interrupt
+                }
+                last_tima_incr_time += tima_00_incr_interval;
+            }
+            break;
+        case 1: // 262144Hz
+            while (dots - last_tima_incr_time >= tima_01_incr_interval) {
+                if ((r_tac & 0x4) && (++r_tima == 0)) { // overflow
+                    r_tima = r_tma;
+                    r_if |= 0x4; // request timer interrupt
+                }
+                last_tima_incr_time += tima_01_incr_interval;
+            }
+            break;
+        case 2: // 65536Hz
+            while (dots - last_tima_incr_time >= tima_10_incr_interval) {
+                if ((r_tac & 0x4) && (++r_tima == 0)) { // overflow
+                    r_tima = r_tma;
+                    r_if |= 0x4; // request timer interrupt
+                }
+                last_tima_incr_time += tima_10_incr_interval;
+            }
+            break;
+        case 3: // 16384Hz
+            while (dots - last_tima_incr_time >= tima_11_incr_interval) {
+                if ((r_tac & 0x4) && (++r_tima == 0)) { // overflow
+                    r_tima = r_tma;
+                    r_if |= 0x4; // request timer interrupt
+                }
+                last_tima_incr_time += tima_11_incr_interval;
+            }
+            break;
+        default:
+            fprintf(stderr, "Invalid TAC clock setting, exiting...\n");
+            exit(1);
+    }
 }

@@ -76,20 +76,6 @@ void draw_pixels_until(size_t until) {
     // Get y pos of tile and the tile map of the tile
     uint8_t tile_y = ((r_ly + r_scy) % 256) / 8;
     uint16_t tile_map = r_lcdc & LCDC_BG_TILE_MAP_AREA ? 1 : 0;
-    
-    // if (r_lcdc & LCDC_BG_TILE_MAP_AREA) {
-    //     if (r_lcdc & LCDC_BG_WIN_TILE_DATA_AREA) {
-    //         printf("1\n");
-    //     } else {
-    //         printf("2\n");
-    //     }
-    // } else {
-    //     if (r_lcdc & LCDC_BG_WIN_TILE_DATA_AREA) {
-    //         printf("3\n");
-    //     } else {
-    //         printf("4\n");
-    //     }
-    // }
 
     for (; last_pixel < until; last_pixel++) {
         // Get x pos and index of the tile

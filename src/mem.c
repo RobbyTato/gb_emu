@@ -365,7 +365,7 @@ void write_mem(uint16_t addr, uint8_t val) {
             r_if |= 0x8; // request serial interrupt
             return;
         case 0xFF04:
-            r_div = val;
+            r_div = 0;
             return;
         case 0xFF05:
             r_tima = val;

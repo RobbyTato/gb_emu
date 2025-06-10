@@ -20,5 +20,6 @@ extern size_t dots;
 extern bool ime;
 
 void execute(void);
+void update_timer_regs(void);
 
 #endif // CPU_H

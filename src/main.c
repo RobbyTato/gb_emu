@@ -213,6 +213,7 @@ int main(int argc, char *argv[])
         // Frame loop
         while (!update_display(frame_start)) {
             execute();
+            update_timer_regs();
         }
         if (debug_mode) {
             update_debug();
