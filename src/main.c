@@ -84,11 +84,44 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    if (run_boot) {
-        pc.r16 = 0;
-        r_boot_rom_mapped = 0;
-    } else {
+    if (!run_boot) {
+        // Set CPU registers
+        af.r16 = 0x180;
+        bc.r16 = 0x13;
+        de.r16 = 0xD8;
+        hl.r16 = 0x14D;
         pc.r16 = 0x100;
+        sp.r16 = 0xFFFE;
+
+        // Set Hardware registers
+        b_buttons_select = true;
+        b_dpad_select = true;
+        r_sc = 0x7E;
+        r_div = 0xAB;
+        r_tac = 0xF8;
+        r_if = 0xE1;
+        r_nr10 = 0x80;
+        r_nr11 = 0xBF;
+        r_nr12 = 0xF3;
+        r_nr13 = 0xFF;
+        r_nr14 = 0xBF;
+        r_nr21 = 0x3F;
+        r_nr23 = 0xFF;
+        r_nr24 = 0xBF;
+        r_nr30 = 0x7F;
+        r_nr31 = 0xFF;
+        r_nr32 = 0x9F;
+        r_nr33 = 0xFF;
+        r_nr34 = 0xBF;
+        r_nr41 = 0xFF;
+        r_nr44 = 0xBF;
+        r_nr50 = 0x77;
+        r_nr51 = 0xF3;
+        r_nr52 = 0xF1;
+        r_lcdc = 0x91;
+        r_stat = 0x85;
+        r_dma = 0xFF;
+        r_bgp = 0xFC;
         r_boot_rom_mapped = 1;
     }
 
@@ -176,13 +209,10 @@ int main(int argc, char *argv[])
                     break;
             }
         }
-        // printf("%d %d %d %d %d %d %d %d\n", b_a, b_b, b_start, b_select, b_left, b_right, b_up, b_down);
-        // printf("%X %d %X %X\n", read_mem(0xFF00), ime, r_ie, r_if);
 
         // Frame loop
         while (!update_display(frame_start)) {
             execute();
-            // dump_cpu_state();
         }
         if (debug_mode) {
             update_debug();
