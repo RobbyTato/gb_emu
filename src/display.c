@@ -14,6 +14,7 @@ static const Uint32 palette[4] =
     {0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000};
 size_t last_mode = 2;
 size_t last_pixel = 0;
+bool req_stat_int_already = false;
 
 void init_display(void) {
     if (!SDL_Init(SDL_INIT_VIDEO)) {
@@ -113,9 +114,11 @@ bool update_display(double frame_start) {
         // TODO: Clear display
         return false;
     }
+
     size_t frame_dots = dots % 70224;
     size_t scanline_dots = frame_dots % 456;
     r_ly = frame_dots / 456;
+
     // Mode 1 (Vertical Blank)
     if (144 <= r_ly && r_ly <= 153) {
         if (last_mode != 1) {
@@ -145,12 +148,14 @@ bool update_display(double frame_start) {
         }
         return false;
     }
+
     // Mode 2 (OAM scan)
     if (last_mode != 2 && scanline_dots < 80) {
         last_mode = 2;
         // TODO: Do the OAM scan
         return false;
     }
+
     // Mode 3 (Drawing pixels)
     if (80 <= scanline_dots && scanline_dots < 252) {
         last_mode = 3;
@@ -161,6 +166,7 @@ bool update_display(double frame_start) {
         draw_pixels_until(scanline_dots - 91);
         return false;
     }
+
     // Mode 0 (Horizontal Blank)
     if (last_mode != 0 && 252 <= scanline_dots && scanline_dots < 456) {
         last_mode = 0;
@@ -169,4 +175,24 @@ bool update_display(double frame_start) {
         return false;
     }
     return false;
+}
+
+void update_stat_reg(void) {
+    // Set LYC == LY bit and PPU mode in STAT register
+    r_stat = (r_stat & 0xF8) | ((r_lyc == r_ly) << 2) | last_mode;
+
+    // Request STAT interrupt
+    bool lyc_ly = (r_stat & 0x40) && (r_lyc == r_ly);
+    bool mode_2 = (r_stat & 0x20) && (last_mode == 2);
+    bool mode_1 = (r_stat & 0x10) && (last_mode == 1);
+    bool mode_0 = (r_stat & 0x08) && (last_mode == 0);
+
+    if (lyc_ly || mode_2 || mode_1 || mode_0) {
+        if (!req_stat_int_already) {
+            r_if |= 2;
+            req_stat_int_already = true;
+        }
+    } else {
+        req_stat_int_already = false;
+    }
 }

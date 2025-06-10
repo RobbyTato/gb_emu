@@ -96,6 +96,8 @@ bool b_b = false;
 bool b_start = false;
 bool b_select = false;
 
+// TODO: Check which regions of memory are accessible in which mode
+
 int bin_search(const uint16_t arr[], int size, const uint16_t target) {
     int left = 0;
     int right = size - 1;
@@ -455,7 +457,7 @@ void write_mem(uint16_t addr, uint8_t val) {
             r_scx = val;
             return;
         case 0xFF44:
-            r_ly = val;
+            // Ignore writes to LY (read-only)
             return;
         case 0xFF45:
             r_lyc = val;

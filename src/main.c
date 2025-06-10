@@ -214,6 +214,7 @@ int main(int argc, char *argv[])
         while (!update_display(frame_start)) {
             execute();
             update_timer_regs();
+            update_stat_reg();
         }
         if (debug_mode) {
             update_debug();

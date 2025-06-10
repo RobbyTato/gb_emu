@@ -13,5 +13,6 @@ extern size_t last_mode;
 void init_display(void);
 void free_display(void);
 bool update_display(double frame_start);
+void update_stat_reg(void);
 
 #endif // DISPLAY_H
