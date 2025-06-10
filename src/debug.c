@@ -288,3 +288,451 @@ void update_debug(void) {
     tile_data_fb = pixels;
     memset(tile_data_fb, 0, 128 * 192 * sizeof(Uint32));
 }
+
+char *get_r8(uint8_t idx) {
+    switch (idx) {
+        case 0:
+            return "b";
+        case 1:
+            return "c";
+        case 2:
+            return "d";
+        case 3:
+            return "e";
+        case 4:
+            return "h";
+        case 5:
+            return "l";
+        case 6:
+            return "[hl]";
+        case 7:
+            return "a";
+    }
+    fprintf(stderr, "Invalid read to r8 index %d, exiting...\n", idx);
+    exit(1);
+}
+
+char *get_r16(uint8_t idx) {
+    switch (idx) {
+        case 0:
+            return "bc";
+        case 1:
+            return "de";
+        case 2:
+            return "hl";
+        case 3:
+            return "sp";
+    }
+    fprintf(stderr, "Invalid read to r16 index %d, exiting...\n", idx);
+    exit(1);
+}
+
+char *get_r16stk(uint8_t idx) {
+    switch (idx) {
+        case 0:
+            return "bc";
+        case 1:
+            return "de";
+        case 2:
+            return "hl";
+        case 3:
+            return "af";
+    }
+    fprintf(stderr, "Invalid read to r16stk index %d, exiting...\n", idx);
+    exit(1);
+}
+
+char *get_r16mem(uint8_t idx) {
+    switch (idx) {
+        case 0:
+            return "[bc]";
+        case 1:
+            return "[de]";
+        case 2:
+            return "[hl+]";
+        case 3:
+            return "[hl-]";
+    }
+    fprintf(stderr, "Invalid read to r16mem index %d, exiting...\n", idx);
+    exit(1);
+}
+
+char *get_cond(uint8_t idx) {
+    switch (idx) {
+        case 0: // nz
+            return "nz";
+        case 1: // z
+            return "z";
+        case 2: // nc
+            return "nc";
+        case 3: // c
+            return "c";
+    }
+    fprintf(stderr, "Invalid condition index %d, exiting...\n", idx);
+    exit(1);
+}
+
+void get_inst_name(char *buffer, uint8_t inst) {
+    switch (inst & 0xC0) {
+    
+    case 0x0:
+        switch (inst & 0xF) {
+            case 0x1: { // ld r16, imm16
+                uint8_t idx = (inst & 0x30) >> 4;
+                sprintf(buffer, "ld %s, imm16", get_r16(idx));
+                return;
+            }
+            case 0x2: { // ld [r16mem], a
+                uint8_t idx = (inst & 0x30) >> 4;
+                sprintf(buffer, "ld %s, a", get_r16mem(idx));
+                return;
+            }
+            case 0xA: { // ld a, [r16mem]
+                uint8_t idx = (inst & 0x30) >> 4;
+                sprintf(buffer, "ld a, %s", get_r16mem(idx));
+                return;
+            }
+            case 0x3: { // inc r16
+                uint8_t idx = (inst & 0x30) >> 4;
+                sprintf(buffer, "inc %s", get_r16(idx));
+                return;
+            }
+            case 0xB: { // dec r16
+                uint8_t idx = (inst & 0x30) >> 4;
+                sprintf(buffer, "dec %s", get_r16(idx));
+                return;
+            }
+            case 0x9: { // add hl, r16
+                uint8_t idx = (inst & 0x30) >> 4;
+                sprintf(buffer, "add hl, %s", get_r16(idx));
+                return;
+            }
+        }
+        switch (inst & 0x7) {
+            case 0x4: { // inc r8
+                uint8_t idx = (inst & 0x38) >> 3;
+                sprintf(buffer, "inc %s", get_r8(idx));
+                return;
+            }
+            case 0x5: { // dec r8
+                uint8_t idx = (inst & 0x38) >> 3;
+                sprintf(buffer, "dec %s", get_r8(idx));
+                return;
+            }
+            case 0x6: { // ld r8, imm8
+                uint8_t idx = (inst & 0x38) >> 3;
+                sprintf(buffer, "ld %s, imm8", get_r8(idx));
+                return;
+            }
+        }
+        if ((inst & 0x27) == 0x20) { // jr cond, imm8
+            uint8_t idx = (inst & 0x18) >> 3;
+            sprintf(buffer, "jr %s, imm8", get_cond(idx));
+            return;
+        }
+        switch (inst) {
+            case 0x0: // nop
+                sprintf(buffer, "nop");
+                return;
+            case 0x8: // ld [imm16], sp
+                sprintf(buffer, "ld [imm16], sp");
+                return;
+            case 0x7: { // rlca
+                sprintf(buffer, "rlca");
+                return;
+            }
+            case 0xF: { // rrca
+                sprintf(buffer, "rrca");
+                return;
+            }
+            case 0x17: { // rla
+                sprintf(buffer, "rla");
+                return;
+            }
+            case 0x1F: { // rra
+                sprintf(buffer, "rra");
+                return;
+            }
+            case 0x27: { // daa
+                sprintf(buffer, "daa");
+                return;
+            }
+            case 0x2F: // cpl
+                sprintf(buffer, "cpl");
+                return;
+            case 0x37: // scf
+                sprintf(buffer, "scf");
+                return;
+            case 0x3F: // ccf
+                sprintf(buffer, "ccf");
+                return;
+            case 0x18: { // jr imm8
+                sprintf(buffer, "jr imm8");
+                return;
+            }
+            case 0x10: { // stop
+                sprintf(buffer, "stop");
+                return;
+            }
+        }
+        break;
+    
+    case 0x40: {
+        if (inst == 0x76) { // halt
+            sprintf(buffer, "halt");
+            return;
+        }
+        // ld r8, r8
+        uint8_t dst = (inst >> 3) & 0x7;
+        uint8_t src = inst & 0x7;
+        sprintf(buffer, "ld %s, %s", get_r8(dst), get_r8(src));
+        return;
+    }
+
+    case 0x80: {
+        switch (inst & 0x38) {
+            case 0x0: { // add a, r8
+                uint8_t idx = inst & 0x7;
+                sprintf(buffer, "add a, %s", get_r8(idx));
+                return;
+            }
+            case 0x8: { // adc a, r8
+                uint8_t idx = inst & 0x7;
+                sprintf(buffer, "adc a, %s", get_r8(idx));
+                return;
+            }
+            case 0x10: { // sub a, r8
+                uint8_t idx = inst & 0x7;
+                sprintf(buffer, "sub a, %s", get_r8(idx));
+                return;
+            }
+            case 0x18: { // sbc a, r8
+                uint8_t idx = inst & 0x7;
+                sprintf(buffer, "sbc a, %s", get_r8(idx));
+                return;
+            }
+            case 0x20: { // and a, r8
+                uint8_t idx = inst & 0x7;
+                sprintf(buffer, "and a, %s", get_r8(idx));
+                return;
+            }
+            case 0x28: { // xor a, r8
+                uint8_t idx = inst & 0x7;
+                sprintf(buffer, "xor a, %s", get_r8(idx));
+                return;
+            }
+            case 0x30: { // or a, r8
+                uint8_t idx = inst & 0x7;
+                sprintf(buffer, "or a, %s", get_r8(idx));
+                return;
+            }
+            case 0x38: { // cp a, r8
+                uint8_t idx = inst & 0x7;
+                sprintf(buffer, "cp a, %s", get_r8(idx));
+                return;
+            }
+        }
+        break;
+    }
+
+    case 0xC0: {
+        switch (inst & 0x27) {
+            case 0x0: { // ret cond
+                uint8_t idx = (inst & 0x18) >> 3;
+                sprintf(buffer, "ret %s", get_cond(idx));
+                return;
+            }
+            case 0x2: { // jp cond, imm16
+                uint8_t idx = (inst & 0x18) >> 3;
+                sprintf(buffer, "jp %s, imm16", get_cond(idx));
+                return;
+            }
+            case 0x4: { // call cond, imm16
+                uint8_t idx = (inst & 0x18) >> 3;
+                sprintf(buffer, "call %s, imm16", get_cond(idx));
+                return;
+            }
+        }
+        if ((inst & 0x7) == 0x7) { // rst tgt3
+            sprintf(buffer, "rst $%x", inst & 0x38);
+            return;
+        }
+        switch (inst & 0xF) {
+            case 0x1: { // pop r16stk
+                uint8_t idx = (inst & 0x30) >> 4;
+                sprintf(buffer, "pop %s", get_r16stk(idx));
+                return;
+            }
+            case 0x5: { // push r16stk
+                uint8_t idx = (inst & 0x30) >> 4;
+                sprintf(buffer, "push %s", get_r16stk(idx));
+                return;
+            }
+        }
+        switch (inst) {
+            case 0xC6: { // add a, imm8
+                sprintf(buffer, "add a, imm8");
+                return;
+            }
+            case 0xCE: { // adc a, imm8
+                sprintf(buffer, "adc a, imm8");
+                return;
+            }
+            case 0xD6: { // sub a, imm8
+                sprintf(buffer, "sub a, imm8");
+                return;
+            }
+            case 0xDE: { // sbc a, imm8
+                sprintf(buffer, "sbc a, imm8");
+                return;
+            }
+            case 0xE6: { // and a, imm8
+                sprintf(buffer, "and a, imm8");
+                return;
+            }
+            case 0xEE: { // xor a, imm8
+                sprintf(buffer, "xor a, imm8");
+                return;
+            }
+            case 0xF6: { // or a, imm8
+                sprintf(buffer, "or a, imm8");
+                return;
+            }
+            case 0xFE: { // cp a, imm8
+                sprintf(buffer, "cp a, imm8");
+                return;
+            }
+            case 0xC9: // ret
+                sprintf(buffer, "ret");
+                return;
+            case 0xD9: // reti
+                sprintf(buffer, "reti");
+                return;
+            case 0xC3: // jp imm16
+                sprintf(buffer, "jp imm8");
+                return;
+            case 0xE9: // jp hl
+                sprintf(buffer, "jp hl");
+                return;
+            case 0xCD: { // call imm16
+                sprintf(buffer, "call imm16");
+                return;
+            }
+            case 0xE2: // ldh [c], a
+                sprintf(buffer, "ldh [c], a");
+                return;
+            case 0xE0: // ldh [imm8], a
+                sprintf(buffer, "ldh [imm8], a");
+                return;
+            case 0xEA: // ld [imm16], a
+                sprintf(buffer, "ld [imm16], a");
+                return;
+            case 0xF2: // ldh a, [c]
+                sprintf(buffer, "ldh a, [c]");
+                return;
+            case 0xF0: // ldh a, [imm8]
+                sprintf(buffer, "ldh a, [imm8]");
+                return;
+            case 0xFA: // ld a, [imm16]
+                sprintf(buffer, "ld a, [imm16]");
+                return;
+            case 0xE8: { // add sp, imm8
+                sprintf(buffer, "add sp, imm8");
+                return;
+            }
+            case 0xF8: { // ld hl, sp + imm8
+                sprintf(buffer, "ld hl, sp + imm8");
+                return;
+            }
+            case 0xF9: // ld sp, hl
+                sprintf(buffer, "ld sp, hl");
+                return;
+            case 0xF3: // di
+                sprintf(buffer, "di");
+                return;
+            case 0xFB: // ei
+                sprintf(buffer, "ei");
+                return;
+            case 0xCB: { // prefix
+                sprintf(buffer, "prefix");
+                return;
+            }
+        }
+        break;
+    }
+    }
+
+    sprintf(buffer, "-");
+    return;
+}
+
+void get_prefix_inst_name(char *buffer, uint8_t inst) {
+    switch (inst & 0xC0) {
+        case 0x00: {
+            switch (inst & 0x38) {
+                case 0x0: { // rlc r8
+                    uint8_t idx = inst & 0x7;
+                    sprintf(buffer, "rlc %s", get_r8(idx));
+                    return;
+                }
+                case 0x8: { // rrc r8
+                    uint8_t idx = inst & 0x7;
+                    sprintf(buffer, "rrc %s", get_r8(idx));
+                    return;
+                }
+                case 0x10: { // rl r8
+                    uint8_t idx = inst & 0x7;
+                    sprintf(buffer, "rl %s", get_r8(idx));
+                    return;
+                }
+                case 0x18: { // rr r8
+                    uint8_t idx = inst & 0x7;
+                    sprintf(buffer, "rr %s", get_r8(idx));
+                    return;
+                }
+                case 0x20: { // sla r8
+                    uint8_t idx = inst & 0x7;
+                    sprintf(buffer, "sla %s", get_r8(idx));
+                    return;
+                }
+                case 0x28: { // sra r8
+                    uint8_t idx = inst & 0x7;
+                    sprintf(buffer, "sra %s", get_r8(idx));
+                    return;
+                }
+                case 0x30: { // swap r8
+                    uint8_t idx = inst & 0x7;
+                    sprintf(buffer, "swap %s", get_r8(idx));
+                    return;
+                }
+                case 0x38: { // srl r8
+                    uint8_t idx = inst & 0x7;
+                    sprintf(buffer, "srl %s", get_r8(idx));
+                    return;
+                }
+            }
+            break;
+        }
+        case 0x40: { // bit b3, r8
+            uint8_t idx = inst & 0x7;
+            uint8_t bit_idx = (inst >> 3) & 0x7;
+            sprintf(buffer, "bit %d, %s", bit_idx, get_r8(idx));
+            return;
+        }
+        case 0x80: { // res b3, r8
+            uint8_t idx = inst & 0x7;
+            uint8_t bit_idx = (inst >> 3) & 0x7;
+            sprintf(buffer, "res %d, %s", bit_idx, get_r8(idx));
+            return;
+        }
+        case 0xC0: { // set b3, r8
+            uint8_t idx = inst & 0x7;
+            uint8_t bit_idx = (inst >> 3) & 0x7;
+            sprintf(buffer, "set %d, %s", bit_idx, get_r8(idx));
+            return;
+        }
+    }
+
+    sprintf(buffer, "-");
+    return;
+}
