@@ -5,6 +5,7 @@
 #include <rom.h>
 #include <mem.h>
 #include <util.h>
+#include <cpu.h>
 
 // Memory
 tile vram_tiles[VRAM_TILES_NUM];
@@ -13,6 +14,10 @@ obj oam[OBJ_NUM];
 uint8_t wram[WRAM_SIZE];
 uint8_t io_reg[IO_REG_SIZE];
 uint8_t hram[HRAM_SIZE];
+
+// Serial Data Transfer registers
+uint8_t r_sb = 0;
+uint8_t r_sc = 0;
 
 // Timer registers
 uint8_t r_div = 0;
@@ -50,7 +55,7 @@ uint8_t r_nr31 = 0; // Length timer
 uint8_t r_nr32 = 0; // Output level
 uint8_t r_nr33 = 0; // Period low
 uint8_t r_nr34 = 0; // Period high & control
-uint8_t m_wave[16]; // Wave pattern
+uint8_t m_wave[16] = {0}; // Wave pattern
 
 // Channel 4 registers (Noise)
 uint8_t r_nr41 = 0; // Length timer
@@ -59,7 +64,7 @@ uint8_t r_nr43 = 0; // Frequency & randomness
 uint8_t r_nr44 = 0; // Control
 
 // LCD control registers
-uint8_t r_lcdc = LCDC_LCD_PPU_ENABLED;
+uint8_t r_lcdc = 0;
 uint8_t r_ly = 0;
 uint8_t r_lyc = 0;
 uint8_t r_stat = 0;
@@ -72,6 +77,9 @@ uint8_t r_wx = 0; // x pos + 7; i.e. wx = 7 and wy = 0 is flush
 uint8_t r_bgp = 0;
 uint8_t r_obp0 = 0;
 uint8_t r_obp1 = 0;
+
+// OAM DMA register
+uint8_t r_dma = 0;
 
 // Boot ROM mapped register
 uint8_t r_boot_rom_mapped = 0;
@@ -172,9 +180,13 @@ uint8_t read_mem(uint16_t addr) {
                             !b_left) << 1) |
                             !b_right) |
                             0xE0;
-                case 0x0:
+                default:
                     return 0xFF;
         }
+        case 0xFF01:
+            return r_sb;
+        case 0xFF02:
+            return r_sc;
         case 0xFF04:
             return r_div;
         case 0xFF05:
@@ -239,6 +251,8 @@ uint8_t read_mem(uint16_t addr) {
             return r_ly;
         case 0xFF45:
             return r_lyc;
+        case 0xFF46:
+            return r_dma;
         case 0xFF47:
             return r_bgp;
         case 0xFF48:
@@ -326,6 +340,29 @@ void write_mem(uint16_t addr, uint8_t val) {
         case 0xFF00:
             b_buttons_select = !!(val & 0x20);
             b_dpad_select = !!(val & 0x10);
+            return;
+        case 0xFF01:
+            r_sb = val;
+            return;
+        case 0xFF02:
+            // TODO: Recheck this logic
+            switch (val & 0x81) {
+                case 0x80:
+                    fprintf(stderr, 
+                            "Attempted serial connection as slave at addr %d\n",
+                            (int)addr);
+                    fprintf(stderr, "Not yet implemented, exiting...\n");
+                    exit(1);
+                case 0x81:
+                    // Hack to make Blargg's test roms work
+                    printf("%c", r_sb);
+                    break;
+                default:
+                    r_sc = val;
+                    return;
+            }
+            r_sc = 0;
+            r_if |= 0x8; // request serial interrupt
             return;
         case 0xFF04:
             r_div = val;
@@ -422,6 +459,9 @@ void write_mem(uint16_t addr, uint8_t val) {
             return;
         case 0xFF45:
             r_lyc = val;
+            return;
+        case 0xFF46:
+            r_dma = val;
             return;
         case 0xFF47:
             r_bgp = val;
