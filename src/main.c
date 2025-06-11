@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 
     if (!run_boot) {
         // Set CPU registers
-        af.r16 = 0x180;
+        af.r16 = 0x1B0;
         bc.r16 = 0x13;
         de.r16 = 0xD8;
         hl.r16 = 0x14D;
