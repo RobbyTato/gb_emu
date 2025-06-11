@@ -7,15 +7,25 @@
 #include <util.h>
 
 void dump_cpu_state(void) {
-    printf("AF: %X\nA: %X\nF: %X\n", af.r16, af.r8.h, af.r8.l);
-    printf("BC: %X\nB: %X\nC: %X\n", bc.r16, bc.r8.h, bc.r8.l);
-    printf("DE: %X\nD: %X\nE: %X\n", de.r16, de.r8.h, de.r8.l);
-    printf("HL: %X\nH: %X\nL: %X\n", hl.r16, hl.r8.h, hl.r8.l);
-    printf("SP: %X\n", sp.r16);
-    printf("PC: %X\n", pc.r16);
+    printf("AF: %02X\nA: %02X\nF: %02X\n", af.r16, af.r8.h, af.r8.l);
+    printf("BC: %02X\nB: %02X\nC: %02X\n", bc.r16, bc.r8.h, bc.r8.l);
+    printf("DE: %02X\nD: %02X\nE: %02X\n", de.r16, de.r8.h, de.r8.l);
+    printf("HL: %02X\nH: %02X\nL: %02X\n", hl.r16, hl.r8.h, hl.r8.l);
+    printf("SP: %02X\n", sp.r16);
+    printf("PC: %02X\n", pc.r16);
     printf("Dots: %lu\n", dots);
     printf("IME: %u\n", ime);
-    printf("\n");
+}
+
+void dump_cpu_state_gameboy_doctor(void) {
+    printf("A:%02X F:%02X B:%02X C:%02X D:%02X E:%02X H:%02X L:%02X\n",
+       af.r8.h, af.r8.l, bc.r8.h, bc.r8.l, de.r8.h, de.r8.l,
+       hl.r8.h, hl.r8.l);
+
+    printf("SP:%04X PC:%04X PCMEM:%02X,%02X,%02X,%02X\n",
+       sp.r16, pc.r16,
+       read_mem(pc.r16), read_mem(pc.r16 + 1),
+       read_mem(pc.r16 + 2), read_mem(pc.r16 + 3));
 }
 
 // Straight AI because I don't wanna implement async-signal-safe dumping
