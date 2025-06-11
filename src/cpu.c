@@ -200,7 +200,7 @@ void write_r16mem(uint8_t idx, uint8_t val) {
 }
 
 uint8_t get_z_flag(void) {
-    return af.r8.l >> 7;
+    return (af.r8.l >> 7) & 0x1;
 }
 
 uint8_t get_n_flag(void) {
@@ -588,14 +588,15 @@ void execute(void) {
             }
             case 0x8: { // adc a, r8
                 uint8_t idx = inst & 0x7;
+                uint8_t a = af.r8.h;
                 uint8_t r8 = read_r8(idx);
                 uint8_t c = get_c_flag();
-                uint8_t res = af.r8.h + (uint8_t)(r8 + c);
+                uint8_t res = a + r8 + c;
                 update_flags(
                     res == 0,
                     SET_0,
-                    ((res ^ af.r8.h ^ (r8 + c)) & 0x10) != 0,
-                    (res < af.r8.h) || (res < (r8 + c))
+                    ((a & 0xF) + (r8 & 0xF) + c) > 0xF,
+                    (uint16_t)a + (uint16_t)r8 + (uint16_t)c > 0xFF
                 );
                 af.r8.h = res;
                 if (idx == 6) {
@@ -627,14 +628,15 @@ void execute(void) {
             }
             case 0x18: { // sbc a, r8
                 uint8_t idx = inst & 0x7;
+                uint8_t a = af.r8.h;
                 uint8_t r8 = read_r8(idx);
                 uint8_t c = get_c_flag();
                 uint8_t res = af.r8.h - (uint8_t)(r8 + c);
                 update_flags(
                     res == 0,
                     SET_1,
-                    ((res ^ af.r8.h ^ (r8 + c)) & 0x10) != 0,
-                    (r8 + c) > af.r8.h
+                    ((a ^ r8 ^ c ^ res) & 0x10) != 0,
+                    a < (r8 + c)
                 );
                 af.r8.h = res;
                 if (idx == 6) {
@@ -789,13 +791,14 @@ void execute(void) {
             }
             case 0xCE: { // adc a, imm8
                 uint8_t imm8 = read_mem(pc.r16 + 1);
+                uint8_t a = af.r8.h;
                 uint8_t c = get_c_flag();
-                uint8_t res = af.r8.h + (uint8_t)(imm8 + c);
+                uint8_t res = a + imm8 + c;
                 update_flags(
                     res == 0,
                     SET_0,
-                    ((res ^ af.r8.h ^ (imm8 + c)) & 0x10) != 0,
-                    (res < af.r8.h) || (res < (imm8 + c))
+                    ((a & 0xF) + (imm8 & 0xF) + c) > 0xF,
+                    (uint16_t)a + (uint16_t)imm8 + (uint16_t)c > 0xFF
                 );
                 af.r8.h = res;
                 dots += 8;
@@ -818,13 +821,14 @@ void execute(void) {
             }
             case 0xDE: { // sbc a, imm8
                 uint8_t imm8 = read_mem(pc.r16 + 1);
+                uint8_t a = af.r8.h;
                 uint8_t c = get_c_flag();
-                uint8_t res = af.r8.h - (uint8_t)(imm8 + c);
+                uint8_t res = a - (uint8_t)(imm8 + c);
                 update_flags(
                     res == 0,
                     SET_1,
-                    ((res ^ af.r8.h ^ (imm8 + c)) & 0x10) != 0,
-                    (imm8 + c) > af.r8.h
+                    ((a ^ imm8 ^ c ^ res) & 0x10) != 0,
+                    a < (imm8 + c)
                 );
                 af.r8.h = res;
                 dots += 8;
@@ -921,7 +925,7 @@ void execute(void) {
                 pc.r16 += 2;
                 return;
             case 0xFA: // ld a, [imm16]
-                af.r8.h = read_imm16(pc.r16 + 1);
+                af.r8.h = read_mem(read_imm16(pc.r16 + 1));
                 dots += 16;
                 pc.r16 += 3;
                 return;
