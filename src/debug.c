@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+bool use_fixed_palette = false;
+
 SDL_Window *tile_map1_window = NULL;
 SDL_Window *tile_map2_window = NULL;
 SDL_Window *tile_data_window = NULL;
@@ -138,7 +140,6 @@ void init_debug(void) {
         exit(1);
     }
     tile_map1_fb = pixels;
-    memset(tile_map1_fb, 0, 256 * 256 * sizeof(Uint32));
 
     if (!SDL_LockTexture(tile_map2_texture, NULL, &pixels, &pitch)) {
         fprintf(stderr, "Failed to lock Tile Map 2 texture: %s\n", 
@@ -146,7 +147,6 @@ void init_debug(void) {
         exit(1);
     }
     tile_map2_fb = pixels;
-    memset(tile_map2_fb, 0, 256 * 256 * sizeof(Uint32));
 
     if (!SDL_LockTexture(tile_data_texture, NULL, &pixels, &pitch)) {
         fprintf(stderr, "Failed to lock Tile Data texture: %s\n", 
@@ -154,7 +154,6 @@ void init_debug(void) {
         exit(1);
     }
     tile_data_fb = pixels;
-    memset(tile_data_fb, 0, 128 * 192 * sizeof(Uint32));
 }
 
 void free_debug(void) {
@@ -214,9 +213,12 @@ void draw_tile(Uint32 *fb, size_t idx, size_t x, size_t y, size_t width) {
             uint8_t lsb = (vram_tiles[idx][idx_offset] >> shift_offset) & 1;
             uint8_t msb = (vram_tiles[idx][idx_offset + 1] >> shift_offset) & 1;
             uint8_t pixel_color_index = (msb << 1) | lsb;
-            // TODO: Maybe put an option to remove palette dependence on
-            // TODO: register BGP for debug purposes
-            Uint32 color = palette[(r_bgp >> (pixel_color_index * 2)) & 0x3];
+            Uint32 color;
+            if (use_fixed_palette) {
+                color = palette[pixel_color_index];
+            } else {
+                color = palette[(r_bgp >> (pixel_color_index * 2)) & 0x3];
+            }
             fb[(8 * x) + xx + ((width * 8) * ((8 * y) + yy))] = color;
         }
     }
